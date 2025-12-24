@@ -368,6 +368,68 @@ export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
     },
   );
 
+  // GET Recent Files
+  tools.register(
+    type({
+      name: '"get_recent_files"',
+      arguments: {
+        "limit?": "number",
+        "excludeFolders?": "string[]",
+        "includeFolders?": "string[]",
+        "pattern?": "string",
+      },
+    }).describe(
+      "Get the most recently modified files across the vault. Returns path, mtime (ISO 8601), and size. Default limit is 20.",
+    ),
+    async ({ arguments: args }) => {
+      const limit = args.limit || 20;
+
+      // Get all files recursively
+      let files: string[];
+      if (args.includeFolders && args.includeFolders.length > 0) {
+        const allFiles: string[] = [];
+        for (const folder of args.includeFolders) {
+          const folderFiles = await listFilesRecursively(folder);
+          allFiles.push(...folderFiles);
+        }
+        files = allFiles;
+      } else {
+        files = await listFilesRecursively("");
+      }
+
+      // Exclude folders
+      if (args.excludeFolders) {
+        files = files.filter((f: string) =>
+          !args.excludeFolders!.some((folder: string) =>
+            f.startsWith(folder + "/") || f === folder
+          )
+        );
+      }
+
+      // Apply pattern filter
+      if (args.pattern) {
+        files = files.filter((f: string) => matchesPattern(f, args.pattern!));
+      }
+
+      // Fetch metadata and sort by mtime desc
+      const filesWithMeta = await Promise.all(
+        files.map((f: string) => getFileMetadata(f))
+      );
+      filesWithMeta.sort((a, b) => b.mtime - a.mtime);
+
+      // Take top N and format response
+      const results = filesWithMeta.slice(0, limit).map((f) => ({
+        path: f.filename,
+        mtime: new Date(f.mtime).toISOString(),
+        size: f.size,
+      }));
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+      };
+    },
+  );
+
   // GET Vault File Content
   tools.register(
     type({
