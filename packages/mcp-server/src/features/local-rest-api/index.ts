@@ -245,25 +245,64 @@ export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
   );
 
   // GET Vault Files or Directories List
+  async function listFilesRecursively(dir: string): Promise<string[]> {
+    const { files } = await makeRequest(
+      LocalRestAPI.ApiVaultDirectoryResponse,
+      `/vault/${dir ? dir + "/" : ""}`,
+    );
+
+    const results: string[] = [];
+    for (const file of files) {
+      const fullPath = dir ? `${dir}/${file}` : file;
+      if (file.endsWith("/")) {
+        const subFiles = await listFilesRecursively(fullPath.slice(0, -1));
+        results.push(...subFiles);
+      } else {
+        results.push(fullPath);
+      }
+    }
+    return results;
+  }
+
+  function matchesPattern(filename: string, pattern: string): boolean {
+    const regex = new RegExp(
+      "^" + pattern.replace(/\./g, "\\.").replace(/\*/g, ".*").replace(/\?/g, ".") + "$"
+    );
+    return regex.test(filename.split("/").pop() || "");
+  }
+
   tools.register(
     type({
       name: '"list_vault_files"',
       arguments: {
         "directory?": "string",
+        "recursive?": "boolean",
+        "pattern?": "string",
       },
     }).describe(
-      "List files in the root directory or a specified subdirectory of your vault.",
+      "List files in the vault. Use recursive=true to include subdirectories. Use pattern to filter by glob (e.g., '*.md').",
     ),
     async ({ arguments: args }) => {
-      const path = args.directory ? `${args.directory}/` : "";
-      const data = await makeRequest(
-        LocalRestAPI.ApiVaultFileResponse.or(
+      let files: string[];
+
+      if (args.recursive) {
+        files = await listFilesRecursively(args.directory || "");
+      } else {
+        const data = await makeRequest(
           LocalRestAPI.ApiVaultDirectoryResponse,
-        ),
-        `/vault/${path}`,
-      );
+          `/vault/${args.directory ? args.directory + "/" : ""}`,
+        );
+        files = data.files.map((f: string) =>
+          args.directory ? `${args.directory}/${f}` : f
+        );
+      }
+
+      if (args.pattern) {
+        files = files.filter((f: string) => matchesPattern(f, args.pattern!));
+      }
+
       return {
-        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(files, null, 2) }],
       };
     },
   );
