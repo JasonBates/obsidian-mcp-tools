@@ -214,7 +214,7 @@ export const ApiPatchParameters = type({
     "Identifies what to modify: 'heading' for Markdown headings (# lines), 'block' for block references (^blockid), or 'frontmatter' for YAML frontmatter fields",
   ),
   target: type("string").describe(
-    "The identifier - either heading path (e.g. 'Heading 1::Subheading 1:1'), block reference ID, or frontmatter field name. IMPORTANT: For headings, use only actual Markdown headings (lines starting with #, ##, etc.). Wiki-links like [[Page Name]] are NOT headings - they are inline links and cannot be used as targets.",
+    "The identifier - either heading path, block reference ID, or frontmatter field name. For headings, you can use partial paths (e.g., 'Section One' or 'Section One::Subsection') which are automatically resolved to full hierarchical paths. IMPORTANT: Use only actual Markdown headings (lines starting with #, ##, etc.). Wiki-links like [[Page Name]] are NOT headings.",
   ),
   "targetDelimiter?": type("string").describe(
     "The separator used in heading paths to indicate nesting (default '::')",
@@ -223,7 +223,7 @@ export const ApiPatchParameters = type({
     "Whether to remove whitespace from target identifier before matching (default: false)",
   ),
   content: type("string").describe(
-    "The actual content to insert, append, or use as replacement",
+    "The actual content to insert, append, or use as replacement. For append operations, a trailing newline is automatically added if missing to prevent broken markdown.",
   ),
   "contentType?": type("'text/markdown' | 'application/json'").describe(
     "Format of the content - use application/json for structured data like table rows or frontmatter values",
