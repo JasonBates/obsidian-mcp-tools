@@ -6,37 +6,56 @@ import { join } from "path";
 import { LocalRestAPI } from "shared";
 
 /**
- * Parse markdown content and resolve a partial heading name to its full hierarchical path.
+ * Parse markdown content and resolve a partial heading path to its full hierarchical path.
+ * Handles both single names ("Section One") and partial paths ("Section One::Subsection").
  * Returns the full path if found, or null if not found.
  */
 function resolveHeadingPath(
   content: string,
-  leafName: string,
+  target: string,
   delimiter: string,
 ): string | null {
   const lines = content.split("\n");
   const stack: string[] = [];
-  const matches: string[] = [];
+  const allPaths: string[] = [];
 
+  // Build all full heading paths
   for (const line of lines) {
-    // Match markdown headings (# Heading, ## Heading, etc.)
     const match = line.match(/^(#{1,6})\s+(.+)$/);
     if (match) {
       const level = match[1].length;
       const headingText = match[2].trim();
 
-      // Maintain stack based on heading level
       stack.length = level - 1;
       stack[level - 1] = headingText;
 
-      if (headingText === leafName) {
-        matches.push(stack.slice(0, level).join(delimiter));
-      }
+      allPaths.push(stack.slice(0, level).join(delimiter));
     }
   }
 
-  // Return first match, or null if not found
-  return matches.length > 0 ? matches[0] : null;
+  // Check if target exactly matches any full path (already complete)
+  if (allPaths.includes(target)) {
+    return target;
+  }
+
+  // Check if any full path ends with the target (partial path from middle)
+  const suffixMatch = allPaths.find(
+    (path) => path.endsWith(delimiter + target) || path === target
+  );
+  if (suffixMatch) {
+    return suffixMatch;
+  }
+
+  // Check if target matches any leaf name (single heading name)
+  const leafMatch = allPaths.find((path) => {
+    const parts = path.split(delimiter);
+    return parts[parts.length - 1] === target;
+  });
+  if (leafMatch) {
+    return leafMatch;
+  }
+
+  return null;
 }
 
 export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
@@ -134,11 +153,8 @@ export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
       const targetDelimiter = args.targetDelimiter || "::";
       let resolvedTarget = args.target;
 
-      // If targeting a heading without a full path, resolve it
-      if (
-        args.targetType === "heading" &&
-        !args.target.includes(targetDelimiter)
-      ) {
+      // If targeting a heading, resolve partial paths to full hierarchical paths
+      if (args.targetType === "heading") {
         // Fetch the active file content to parse headings
         const fileContent = await makeRequest(
           LocalRestAPI.ApiContentResponse,
@@ -746,11 +762,8 @@ export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
       const targetDelimiter = args.targetDelimiter || "::";
       let resolvedTarget = args.target;
 
-      // If targeting a heading without a full path, resolve it
-      if (
-        args.targetType === "heading" &&
-        !args.target.includes(targetDelimiter)
-      ) {
+      // If targeting a heading, resolve partial paths to full hierarchical paths
+      if (args.targetType === "heading") {
         // Fetch the file content to parse headings
         const fileContent = await makeRequest(
           LocalRestAPI.ApiContentResponse,
