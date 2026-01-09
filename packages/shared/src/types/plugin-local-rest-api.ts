@@ -211,10 +211,10 @@ export const ApiPatchParameters = type({
     "Specifies how to modify the content: append (add after), prepend (add before), or replace existing content",
   ),
   targetType: type("'heading' | 'block' | 'frontmatter'").describe(
-    "Identifies what to modify: a section under a heading, a referenced block, or a frontmatter field",
+    "Identifies what to modify: 'heading' for Markdown headings (# lines), 'block' for block references (^blockid), or 'frontmatter' for YAML frontmatter fields",
   ),
   target: type("string").describe(
-    "The identifier - either heading path (e.g. 'Heading 1::Subheading 1:1'), block reference ID, or frontmatter field name",
+    "The identifier - either heading path (e.g. 'Heading 1::Subheading 1:1'), block reference ID, or frontmatter field name. IMPORTANT: For headings, use only actual Markdown headings (lines starting with #, ##, etc.). Wiki-links like [[Page Name]] are NOT headings - they are inline links and cannot be used as targets.",
   ),
   "targetDelimiter?": type("string").describe(
     "The separator used in heading paths to indicate nesting (default '::')",
