@@ -44,7 +44,7 @@ This fork includes the following improvements over the upstream repository:
 
 - **`get_vault_files`** - Batch fetch multiple files in a single request, reducing round-trips for multi-file operations
 - **`get_recent_files`** - Get recently modified files across the vault, sorted by modification time with optional glob pattern filtering
-- **`link_to_mocs`** - Automatically link notes to semantically relevant Maps of Content (MoCs) using Smart Connections
+- **`categorize_note`** - Use GPT-4o to analyze note content and populate ## Connected section with appropriate MoC links
 
 ### Enhanced Tools
 
