@@ -16,7 +16,6 @@ obsidian-mcp-tools-dev/
 │   │           ├── local-rest-api/   # Obsidian REST API integration
 │   │           ├── smart-connections/ # Semantic search via embeddings
 │   │           ├── llm-categorization/ # GPT-4o note categorization
-│   │           ├── moc-linking/      # Map of Contents linking
 │   │           ├── templates/        # Templater execution
 │   │           ├── fetch/            # Web content fetching
 │   │           └── prompts/          # Prompt resources
@@ -50,7 +49,6 @@ obsidian-mcp-tools-dev/
 - **local-rest-api**: Vault file operations via Obsidian Local REST API plugin
 - **smart-connections**: Semantic search using Smart Connections plugin
 - **llm-categorization**: `categorize_note` tool using GPT-4o for MoC linking
-- **moc-linking**: `link_to_mocs` tool for semantic MoC connections
 - **templates**: Execute Templater templates with arguments
 - **fetch**: Fetch and convert web content to markdown
 

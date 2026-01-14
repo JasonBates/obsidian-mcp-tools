@@ -4,7 +4,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerFetchTool } from "../fetch";
 import { registerLlmCategorizationTools } from "../llm-categorization";
 import { registerLocalRestApiTools } from "../local-rest-api";
-import { registerMocLinkingTools } from "../moc-linking";
 import { setupObsidianPrompts } from "../prompts";
 import { registerSmartConnectionsTools } from "../smart-connections";
 import { registerTemplaterTools } from "../templates";
@@ -52,7 +51,6 @@ export class ObsidianMcpServer {
     registerFetchTool(this.tools, this.server);
     registerLlmCategorizationTools(this.tools);
     registerLocalRestApiTools(this.tools, this.server);
-    registerMocLinkingTools(this.tools);
     registerSmartConnectionsTools(this.tools);
     registerTemplaterTools(this.tools);
 
