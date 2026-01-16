@@ -33,6 +33,7 @@ export class ObsidianMcpServer {
     this.tools = new ToolRegistryClass();
 
     this.setupHandlers();
+    this.applyToolFilter();
 
     // Error handling
     this.server.onerror = (error) => {
@@ -63,6 +64,17 @@ export class ObsidianMcpServer {
       logger.debug("Request handled", { response });
       return response;
     });
+  }
+
+  private applyToolFilter() {
+    const disabled = process.env.DISABLED_TOOLS;
+    if (!disabled) return;
+
+    const names = disabled.split(",").map((s) => s.trim()).filter(Boolean);
+    if (names.length > 0) {
+      logger.info("Disabling tools from DISABLED_TOOLS env var", { tools: names });
+      this.tools.applyDisabledFilter(names);
+    }
   }
 
   async run() {

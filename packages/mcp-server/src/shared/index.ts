@@ -3,4 +3,5 @@ export * from "./formatString";
 export * from "./logger";
 export * from "./makeRequest";
 export * from "./parseTemplateParameters";
+export * from "./toolGroups";
 export * from "./ToolRegistry";

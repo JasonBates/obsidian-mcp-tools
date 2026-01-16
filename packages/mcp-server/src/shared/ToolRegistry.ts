@@ -7,6 +7,7 @@ import {
 import { type, type Type } from "arktype";
 import { formatMcpError } from "./formatMcpError.js";
 import { logger } from "./logger.js";
+import { expandToolNames } from "./toolGroups.js";
 
 interface HandlerContext {
   server: Server;
@@ -72,6 +73,22 @@ export class ToolRegistryClass<
 
   disable = <Schema extends TSchema>(schema: Schema) => {
     this.enabled.delete(schema);
+    return this;
+  };
+
+  /**
+   * Disable tools by name. Supports individual tool names and group prefixes (@active-file, etc.)
+   * Tools not found in the registry are silently ignored (allows forward-compatible configs).
+   */
+  applyDisabledFilter = (disabledNames: string[]) => {
+    const expandedNames = new Set(expandToolNames(disabledNames));
+    for (const schema of this.keys()) {
+      // @ts-expect-error We know the const property is present
+      const toolName = schema.get("name").toJsonSchema().const as string;
+      if (expandedNames.has(toolName)) {
+        this.disable(schema);
+      }
+    }
     return this;
   };
 
