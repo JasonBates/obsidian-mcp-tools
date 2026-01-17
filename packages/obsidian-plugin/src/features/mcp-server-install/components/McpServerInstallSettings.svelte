@@ -3,7 +3,7 @@
   import { FULL_LOGGER_FILENAME, loadDependenciesArray } from "$/shared";
   import { Notice } from "obsidian";
   import { dirname } from "path";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import {
     removeFromClaudeConfig,
     updateClaudeConfig,
@@ -18,6 +18,12 @@
 
   // Dependencies and API key status
   const deps = loadDependenciesArray(plugin);
+
+  // Clean up the RxJS subscription when component is destroyed
+  const depsSubscription = deps.subscribe(() => {});
+  onDestroy(() => {
+    depsSubscription.unsubscribe();
+  });
 
   // Installation status
   let status: InstallationStatus = {

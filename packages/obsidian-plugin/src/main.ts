@@ -2,7 +2,7 @@ import { type } from "arktype";
 import type { Request, Response } from "express";
 import { Notice, Plugin, TFile } from "obsidian";
 import { shake } from "radash";
-import { lastValueFrom } from "rxjs";
+import { last, lastValueFrom, Subscription } from "rxjs";
 import {
   jsonSearchRequest,
   LocalRestAPI,
@@ -30,6 +30,12 @@ export default class McpToolsPlugin extends Plugin {
     installed: false,
   };
 
+  // Track all active subscriptions for cleanup
+  private subscriptions: Subscription[] = [];
+
+  // Prevent double endpoint registration
+  private endpointsRegistered = false;
+
   async getLocalRestApiKey(): Promise<string | undefined> {
     // The API key is stored in the plugin's settings
     return this.localRestApi.plugin?.settings?.apiKey;
@@ -41,29 +47,43 @@ export default class McpToolsPlugin extends Plugin {
     await setupMcpServerInstall(this);
     await setupCategorization(this);
 
-    // Check for required dependencies
-    lastValueFrom(loadLocalRestAPI(this)).then((localRestApi) => {
-      this.localRestApi = localRestApi;
+    // Check for required dependencies - use last() to only get final value
+    const localRestApiSub = loadLocalRestAPI(this)
+      .pipe(last())
+      .subscribe({
+        next: (localRestApi) => {
+          this.localRestApi = localRestApi;
 
-      if (!this.localRestApi.api) {
-        new Notice(
-          `${this.manifest.name}: Local REST API plugin is required but not found. Please install it from the community plugins and restart Obsidian.`,
-          0,
-        );
-        return;
-      }
+          if (!this.localRestApi.api) {
+            new Notice(
+              `${this.manifest.name}: Local REST API plugin is required but not found. Please install it from the community plugins and restart Obsidian.`,
+              0,
+            );
+            return;
+          }
 
-      // Register endpoints
-      this.localRestApi.api
-        .addRoute("/search/smart")
-        .post(this.handleSearchRequest.bind(this));
+          // Guard against double registration
+          if (this.endpointsRegistered) {
+            return;
+          }
+          this.endpointsRegistered = true;
 
-      this.localRestApi.api
-        .addRoute("/templates/execute")
-        .post(this.handleTemplateExecution.bind(this));
+          // Register endpoints
+          this.localRestApi.api
+            .addRoute("/search/smart")
+            .post(this.handleSearchRequest.bind(this));
 
-      logger.info("MCP Tools Plugin loaded");
-    });
+          this.localRestApi.api
+            .addRoute("/templates/execute")
+            .post(this.handleTemplateExecution.bind(this));
+
+          logger.info("MCP Tools Plugin loaded");
+        },
+        error: (err) => {
+          logger.error("Error loading Local REST API", { error: err });
+        },
+      });
+    this.subscriptions.push(localRestApiSub);
   }
 
   private async handleTemplateExecution(req: Request, res: Response) {
@@ -229,6 +249,15 @@ export default class McpToolsPlugin extends Plugin {
   }
 
   onunload() {
+    // Clean up all RxJS subscriptions to prevent memory leaks
+    for (const subscription of this.subscriptions) {
+      subscription.unsubscribe();
+    }
+    this.subscriptions = [];
+
+    // Reset state for potential re-enable
+    this.endpointsRegistered = false;
+
     this.localRestApi.api?.unregister();
   }
 }
