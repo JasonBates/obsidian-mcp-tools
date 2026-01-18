@@ -307,16 +307,12 @@ export type ApiTemplateExecutionResponseType =
  * Content-Type: application/json
  * POST /canvas/screenshot
  * @property filename - Path to the .canvas file in the vault
- * @property zoomToFit - Whether to zoom to fit all content (default: true)
- * @property timeout - Wait time for canvas to render in ms (default: 500)
+ * @property timeout - Wait time for canvas to render in ms (default: 1000)
  */
 export const ApiCanvasScreenshotParams = type({
   filename: type("string").describe("Path to the .canvas file in the vault"),
-  "zoomToFit?": type("boolean").describe(
-    "Whether to zoom to fit all content (default: true)",
-  ),
   "timeout?": type("number").describe(
-    "Wait time for canvas to render in ms (default: 500)",
+    "Wait time for canvas to render in ms (default: 1000)",
   ),
 });
 

@@ -17,7 +17,7 @@ import {
 } from "./types";
 
 // Maximum time to wait for nodes to load (ms)
-const MAX_LOADING_TIME = 10000;
+const MAX_LOADING_TIME = 15000;
 
 /**
  * Sleep helper
@@ -499,6 +499,10 @@ export async function handleCanvasScreenshot(
   req: Request,
   res: Response,
 ): Promise<void> {
+  // Create interaction blocker EARLY to prevent user interaction during entire process
+  const interactionBlocker = createInteractionBlocker();
+  document.body.appendChild(interactionBlocker);
+
   try {
     // Validate request body
     const params = LocalRestAPI.ApiCanvasScreenshotParams(req.body);
@@ -511,7 +515,8 @@ export async function handleCanvasScreenshot(
       return;
     }
 
-    const { filename, zoomToFit = true, timeout = 500 } = params;
+    const { filename, timeout = 1000 } = params;
+    logger.debug("Screenshot params", { filename, timeout });
 
     // Validate file exists and is a canvas
     const file = plugin.app.vault.getAbstractFileByPath(filename);
@@ -543,16 +548,16 @@ export async function handleCanvasScreenshot(
       }
     }
 
-    // If not open, open it
+    // If not open, open it in a new tab first
     if (!canvas) {
-      logger.debug("Opening canvas file", { filename });
+      logger.debug("Opening canvas file in new tab", { filename });
 
       // Open the file in a new leaf
       canvasLeaf = plugin.app.workspace.getLeaf(true);
       await canvasLeaf.openFile(file);
 
       // Wait for the view to initialize
-      await sleep(500);
+      await sleep(timeout);
 
       // Try to get the canvas again
       const view = canvasLeaf.view as CanvasView;
@@ -573,11 +578,15 @@ export async function handleCanvasScreenshot(
     if (canvasLeaf) {
       plugin.app.workspace.setActiveLeaf(canvasLeaf, { focus: true });
       plugin.app.workspace.revealLeaf(canvasLeaf);
-      await sleep(500); // Wait for layout to fully update
+      await sleep(timeout); // Wait for layout to fully update
     }
 
     // Capture the image (handles zooming, waiting for nodes, and screenshot mode internally)
-    logger.debug("Capturing canvas as image");
+    // Note: captureCanvasAsImage creates its own interaction blocker for the capture phase,
+    // but we keep ours up for the entire process including file opening
+    const nodes = Array.from(canvas.nodes.values());
+    const edges = Array.from(canvas.edges.values());
+    logger.debug(`Canvas ready: ${nodes.length} nodes, ${edges.length} edges`);
     const imageBase64 = await captureCanvasAsImage(canvas);
 
     // Return the image
@@ -596,6 +605,9 @@ export async function handleCanvasScreenshot(
       error:
         error instanceof Error ? error.message : "Failed to capture canvas",
     });
+  } finally {
+    // Always remove the interaction blocker
+    interactionBlocker.remove();
   }
 }
 
