@@ -11,6 +11,10 @@ import {
   type PromptArgAccessor,
   type SearchResponse,
 } from "shared";
+import {
+  handleCanvasScreenshot,
+  setup as setupCanvasScreenshot,
+} from "./features/canvas-screenshot";
 import { setup as setupCategorization } from "./features/categorization";
 import { setup as setupCore } from "./features/core";
 import { setup as setupMcpServerInstall } from "./features/mcp-server-install";
@@ -46,6 +50,7 @@ export default class McpToolsPlugin extends Plugin {
     await setupCore(this);
     await setupMcpServerInstall(this);
     await setupCategorization(this);
+    await setupCanvasScreenshot(this);
 
     // Check for required dependencies - use last() to only get final value
     const localRestApiSub = loadLocalRestAPI(this)
@@ -76,6 +81,10 @@ export default class McpToolsPlugin extends Plugin {
           this.localRestApi.api
             .addRoute("/templates/execute")
             .post(this.handleTemplateExecution.bind(this));
+
+          this.localRestApi.api
+            .addRoute("/canvas/screenshot")
+            .post((req, res) => handleCanvasScreenshot(this, req, res));
 
           logger.info("MCP Tools Plugin loaded");
         },

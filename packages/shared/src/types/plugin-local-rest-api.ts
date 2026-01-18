@@ -302,5 +302,40 @@ export type ApiTemplateExecutionParamsType =
 export type ApiTemplateExecutionResponseType =
   typeof ApiTemplateExecutionResponse.infer;
 
+/**
+ * Parameters for canvas screenshot request
+ * Content-Type: application/json
+ * POST /canvas/screenshot
+ * @property filename - Path to the .canvas file in the vault
+ * @property zoomToFit - Whether to zoom to fit all content (default: true)
+ * @property timeout - Wait time for canvas to render in ms (default: 500)
+ */
+export const ApiCanvasScreenshotParams = type({
+  filename: type("string").describe("Path to the .canvas file in the vault"),
+  "zoomToFit?": type("boolean").describe(
+    "Whether to zoom to fit all content (default: true)",
+  ),
+  "timeout?": type("number").describe(
+    "Wait time for canvas to render in ms (default: 500)",
+  ),
+});
+
+/**
+ * Response from canvas screenshot
+ * Content-Type: application/json
+ * POST /canvas/screenshot
+ * @property image - Base64-encoded PNG image data
+ * @property mimeType - MIME type of the image (always "image/png")
+ */
+export const ApiCanvasScreenshotResponse = type({
+  image: type("string").describe("Base64-encoded PNG image data"),
+  mimeType: type("'image/png'").describe("MIME type of the image"),
+});
+
+export type ApiCanvasScreenshotParamsType =
+  typeof ApiCanvasScreenshotParams.infer;
+export type ApiCanvasScreenshotResponseType =
+  typeof ApiCanvasScreenshotResponse.infer;
+
 // Additional API response types can be added here
 export const MIME_TYPE_OLRAPI_NOTE_JSON = "application/vnd.olrapi.note+json";

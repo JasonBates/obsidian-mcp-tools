@@ -1,6 +1,7 @@
 import { logger, type ToolRegistry, ToolRegistryClass } from "$/shared";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { registerCanvasScreenshotTools } from "../canvas-screenshot";
 import { registerFetchTool } from "../fetch";
 import { registerLlmCategorizationTools } from "../llm-categorization";
 import { registerLocalRestApiTools } from "../local-rest-api";
@@ -49,6 +50,7 @@ export class ObsidianMcpServer {
   private setupHandlers() {
     setupObsidianPrompts(this.server);
 
+    registerCanvasScreenshotTools(this.tools);
     registerFetchTool(this.tools, this.server);
     registerLlmCategorizationTools(this.tools);
     registerLocalRestApiTools(this.tools, this.server);
