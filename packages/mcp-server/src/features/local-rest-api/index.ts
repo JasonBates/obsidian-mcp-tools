@@ -29,7 +29,9 @@ function resolveHeadingPath(
       stack.length = level - 1;
       stack[level - 1] = headingText;
 
-      allPaths.push(stack.slice(0, level).join(delimiter));
+      // Filter out undefined values to handle files without H1 headings
+      // e.g., "## Day Log" should produce "Day Log", not "::Day Log"
+      allPaths.push(stack.slice(0, level).filter(Boolean).join(delimiter));
     }
   }
 
@@ -172,10 +174,17 @@ export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
         }
       }
 
-      // Ensure appended content ends with newlines for clean separation from next section
+      // Ensure proper newline handling for clean markdown formatting
       let content = args.content;
       if (args.operation === "append" && !content.endsWith("\n")) {
+        // Append: add trailing newlines to separate from next section
         content = content + "\n\n";
+      } else if (args.operation === "prepend" && !content.endsWith("\n")) {
+        // Prepend: add trailing newline to separate from existing content
+        content = content + "\n";
+      } else if (args.operation === "replace" && !content.endsWith("\n")) {
+        // Replace: add trailing newline to separate from next section
+        content = content + "\n";
       }
 
       const headers: Record<string, string> = {
@@ -781,10 +790,17 @@ export function registerLocalRestApiTools(tools: ToolRegistry, server: Server) {
         }
       }
 
-      // Ensure appended content ends with newlines for clean separation from next section
+      // Ensure proper newline handling for clean markdown formatting
       let content = args.content;
       if (args.operation === "append" && !content.endsWith("\n")) {
+        // Append: add trailing newlines to separate from next section
         content = content + "\n\n";
+      } else if (args.operation === "prepend" && !content.endsWith("\n")) {
+        // Prepend: add trailing newline to separate from existing content
+        content = content + "\n";
+      } else if (args.operation === "replace" && !content.endsWith("\n")) {
+        // Replace: add trailing newline to separate from next section
+        content = content + "\n";
       }
 
       const headers: HeadersInit = {
